@@ -6,7 +6,7 @@ import os
 TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
 CHAT_ID = -1001234567890  # Заменить на ID канала или чата
 
-WEBHOOK_URL = 'https://твой-домен.onrender.com/'  # 🔁 Укажи свой Render-домен
+WEBHOOK_URL = 'https://твой-домен.onrender.com/'  # 🟡 ВСТАВЬ СЮДА СВОЙ Render URL
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -62,12 +62,12 @@ def send_from_make():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# --- Настройка Webhook при запуске ---
-@app.before_first_request
+# --- Настройка Webhook ---
 def setup_webhook():
     bot.remove_webhook()
     bot.set_webhook(url=WEBHOOK_URL)
 
-# --- Запуск Flask ---
+# --- Запуск приложения ---
 if __name__ == '__main__':
+    setup_webhook()
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

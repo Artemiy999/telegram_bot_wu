@@ -7,11 +7,8 @@ import threading
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-# ID чата (группы/канала), куда бот будет писать сообщения
-CHAT_ID = -1002704677155  # <-- замени на свой чат ID
+CHAT_ID = -1002704677155 
 
-
-]
 
 def main_menu():
     markup = types.InlineKeyboardMarkup(row_width=1)

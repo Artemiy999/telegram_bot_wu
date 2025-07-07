@@ -6,7 +6,7 @@ import os
 TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
 CHAT_ID = -1001234567890  # Заменить на ID канала или чата
 
-WEBHOOK_URL = 'https://telegram-bot-wu.onrender.com'  # 🟡 ВСТАВЬ СЮДА СВОЙ Render URL
+WEBHOOK_URL = 'https://telegram-bot-wu.onrender.com'/  # 🟡 ВСТАВЬ СЮДА СВОЙ Render URL
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)

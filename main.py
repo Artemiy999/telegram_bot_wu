@@ -1,22 +1,15 @@
 import os
+from flask import Flask, request, jsonify
 import telebot
-from telebot import types
-import threading
-import time
 
 TOKEN = os.getenv("TOKEN")
+CHAT_ID = -1002704677155
+
 bot = telebot.TeleBot(TOKEN)
-
-CHAT_ID = -1002704677155  # ID чата для рассылок и сообщений из Make
-
-auto_texts = [
-    "Тема 1: Как дышать правильно для медитации.",
-    "Тема 2: Польза регулярных сессий психотерапии.",
-    "Тема 3: Практики осознанности в повседневной жизни.",
-    "Тема 4: Гвоздестояние — что это и кому полезно.",
-]
+app = Flask(__name__)
 
 def main_menu():
+    from telebot import types
     markup = types.InlineKeyboardMarkup(row_width=1)
 
     btn_events = types.InlineKeyboardButton(
@@ -64,33 +57,28 @@ def send_welcome(message):
         "Привет! Добро пожаловать в меню бота.\n\n"
         "Выбери интересующую тебя вкладку."
     )
-    # Отвечаем лично пользователю, который нажал /start
     bot.send_message(message.chat.id, welcome_text, reply_markup=main_menu())
 
-# Функция для автопостинга в чат (например, раз в час)
-def auto_posting(chat_id, delay=3600):
-    while True:
-        for text in auto_texts:
-            try:
-                bot.send_message(chat_id, text)
-                print(f"Опубликовано сообщение в {chat_id}")
-            except Exception as e:
-                print(f"Ошибка при публикации в {chat_id}: {e}")
-            time.sleep(delay)
+@app.route('/send', methods=['POST'])
+def send_message():
+    data = request.json
+    if not data or 'text' not in data or not data['text'].strip():
+        return jsonify({"error": "Missing required parameter 'text'"}), 400
 
-def start_auto_posting():
-    thread = threading.Thread(target=auto_posting, args=(CHAT_ID,))
-    thread.daemon = True
-    thread.start()
-
-# Функция для Make: отправка сообщения в чат через бота
-def send_message_to_chat_from_make(text):
+    text = data['text']
     try:
         bot.send_message(CHAT_ID, text)
-        print("Сообщение из Make отправлено в чат")
+        return jsonify({"status": "Message sent"})
     except Exception as e:
-        print(f"Ошибка при отправке из Make: {e}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    start_auto_posting()
-    bot.polling()
+    # Запускаем бота в отдельном потоке, а Flask API — в основном
+    import threading
+
+    def run_bot():
+        bot.infinity_polling()
+
+    threading.Thread(target=run_bot).start()
+    app.run(host='0.0.0.0', port=5000)
+

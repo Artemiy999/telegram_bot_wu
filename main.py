@@ -1,14 +1,19 @@
-from flask import Flask, request
+from flask import Flask, request, abort
 import telebot
-import os
+import logging
 
-TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
-WEBHOOK_URL = 'https://telegram-bot-wu.onrender.com/'  # 🟡 Замени на твой render-домен
+# --- Настройки ---
+TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'  # Твой токен
+WEBHOOK_URL_BASE = 'https://telegram-bot-wu.onrender.com'  # Замени на URL твоего приложения на Render
+WEBHOOK_URL_PATH = f"/{TOKEN}"  # Используем токен в пути для безопасности
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# Главное меню
+# Включаем логирование для отладки
+logging.basicConfig(level=logging.INFO)
+
+# --- Клавиатура меню ---
 from telebot import types
 
 def main_menu():
@@ -24,7 +29,12 @@ def main_menu():
     )
     return markup
 
-# Обработка callback-кнопки
+# --- Обработчики команд и callback ---
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    welcome_text = "Привет! Добро пожаловать в меню бота.\n\nВыбери интересующую тебя вкладку."
+    bot.send_message(message.chat.id, welcome_text, reply_markup=main_menu())
+
 @bot.callback_query_handler(func=lambda call: call.data == 'about_project')
 def about_project_callback(call):
     about_text = (
@@ -35,31 +45,34 @@ def about_project_callback(call):
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id, about_text)
 
-# Обработка команды /start
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    welcome_text = "Привет! Добро пожаловать в меню бота.\n\nВыбери интересующую тебя вкладку."
-    bot.send_message(message.chat.id, welcome_text, reply_markup=main_menu())
+# --- Webhook route для Telegram ---
+@app.route(WEBHOOK_URL_PATH, methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return '', 200
+    else:
+        abort(403)
 
-# Обработка POST-запросов от Telegram
-@app.route(f"/{TOKEN}", methods=['POST'])
-def receive_update():
-    json_str = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return 'ok', 200
-
-# Установка webhook при запуске
-@app.before_first_request
-def setup_webhook():
-    bot.remove_webhook()
-    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
-
-# Пинг для Render (необязательный, но полезен)
+# --- Простой тестовый route ---
 @app.route('/', methods=['GET'])
 def index():
-    return 'Bot is running', 200
+    return 'Telegram bot is running', 200
 
+# --- Функция установки webhook ---
+def setup_webhook():
+    logging.info("Removing existing webhook...")
+    bot.remove_webhook()
+    logging.info(f"Setting new webhook to {WEBHOOK_URL_BASE}{WEBHOOK_URL_PATH} ...")
+    success = bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH)
+    if success:
+        logging.info("Webhook setup successful")
+    else:
+        logging.error("Failed to set webhook")
+
+# --- Точка входа ---
 if __name__ == '__main__':
+    setup_webhook()  # Устанавливаем webhook при запуске
     app.run(host='0.0.0.0', port=10000)
-

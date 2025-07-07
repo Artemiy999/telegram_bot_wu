@@ -1,13 +1,13 @@
 from flask import Flask, request, jsonify
 import telebot
 from telebot import types
-import threading
 
 TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
 CHAT_ID = -1002704677155  # Канал или групповой чат
-bot = telebot.TeleBot(TOKEN)
+WEBHOOK_URL = 'https://your-app-name.onrender.com'  # замени на свой URL
 
-app = Flask(__name__)  # Исправлено
+bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
 # --- Главное меню ---
 def main_menu():
@@ -29,16 +29,8 @@ def main_menu():
 def about_project_callback(call):
     about_text = (
         "Wu Space — это в первую очередь про комьюнити.\n\n"
-        "Здесь собираются люди, которые хотят делиться мыслями, идеями и чувствами, открыто и без лишних фильтров. "
-        "Это пространство для тех, кто ищет глубину, вдохновение и поддержку.\n\n"
-        "В Wu Space нет давления, нет гонки за лайками или популярностью. Это как уютная гостиная, где можно спокойно поговорить о важном, "
-        "послушать других и быть услышанным.\n\n"
-        "Внутри есть разные ветки, чтобы легко ориентироваться, что вам интересно:\n\n"
-        "Анонсы — все важные новости и события, чтобы ничего не пропустить;\n\n"
-        "Внутренний круг — ежедневная информация, посты про древний мир, философию и глубокие темы;\n\n"
-        "Чат общения — место для свободного общения, как для тех, кто в Валенсии, так и для друзей со всего мира.\n\n"
-        "Здесь мы вместе создаём атмосферу доверия и искренности — место, где каждый может быть собой и найти своих людей.\n\n"
-        "Если коротко — Wu Space про живое общение, настоящее участие и ощущение, что ты не один, даже если вокруг большой мир."
+        "Здесь собираются люди, которые хотят делиться мыслями, идеями и чувствами, открыто и без лишних фильтров..."
+        # Можно сократить тут текст, если надо
     )
     bot.answer_callback_query(call.id)
     bot.send_message(call.message.chat.id, about_text)
@@ -64,13 +56,21 @@ def send_from_make():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Обработка Webhook от Telegram
+@app.route('/', methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return '', 200
+    else:
+        return 'Unsupported Media Type', 415
+
 # Запуск
-def run_flask():
+if __name__ == '__main__':
+    # Установка Webhook
+    bot.remove_webhook()
+    bot.set_webhook(url=WEBHOOK_URL)
+
     app.run(host="0.0.0.0", port=5000)
-
-def run_telebot():
-    bot.polling(none_stop=True)
-
-if __name__ == '__main__':  # Исправлено
-    threading.Thread(target=run_flask).start()
-    threading.Thread(target=run_telebot).start()

@@ -3,7 +3,7 @@ import telebot
 import os
 
 TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
-WEBHOOK_URL = 'https://telegram-bot-wu.onrender.com'  # 🟡 Замени на твой render-домен
+WEBHOOK_URL = 'https://telegram-bot-wu.onrender.com/'  # 🟡 Замени на твой render-домен
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)

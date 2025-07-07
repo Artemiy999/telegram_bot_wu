@@ -7,13 +7,10 @@ import threading
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
+# ID чата (группы/канала), куда бот будет писать сообщения
+CHAT_ID = -1002704677155  # <-- замени на свой чат ID
 
-# Темы для автоматических публикаций — можно расширять или брать из файла/API
-auto_texts = [
-    "Тема 1: Как дышать правильно для медитации.",
-    "Тема 2: Польза регулярных сессий психотерапии.",
-    "Тема 3: Практики осознанности в повседневной жизни.",
-    "Тема 4: Гвоздестояние — что это и кому полезно.",
+
 ]
 
 def main_menu():
@@ -64,7 +61,8 @@ def send_welcome(message):
         "Привет! Добро пожаловать в меню бота.\n\n"
         "Выбери интересующую тебя вкладку."
     )
-    bot.send_message(message.chat.id, welcome_text, reply_markup=main_menu())
+    # Отправляем сообщение в чат (а не пользователю, который написал)
+    bot.send_message(CHAT_ID, welcome_text, reply_markup=main_menu())
 
 # Функция для автопубликаций в чат
 def auto_posting(chat_id, delay=86400):
@@ -79,11 +77,11 @@ def auto_posting(chat_id, delay=86400):
 
 # Запуск автопубликаций в отдельном потоке
 def start_auto_posting():
-    chat_id = -1002704677155
-    thread = threading.Thread(target=auto_posting, args=(chat_id, 3600))  # пример: раз в 1 час
+    thread = threading.Thread(target=auto_posting, args=(CHAT_ID, 3600))  # раз в час
     thread.daemon = True
     thread.start()
 
 if __name__ == '__main__':
     start_auto_posting()
     bot.polling()
+

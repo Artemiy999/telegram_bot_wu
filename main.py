@@ -1,3 +1,15 @@
+from flask import Flask, request, jsonify
+import telebot
+from telebot import types
+import threading
+
+TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
+CHAT_ID = -1002704677155  # Групповой чат или канал
+bot = telebot.TeleBot(TOKEN)
+
+app = Flask(__name__)
+
+# --- Главное меню ---
 from telebot import types
 
 def main_menu():
@@ -52,3 +64,29 @@ def send_welcome(message):
         "Выбери интересующую тебя вкладку."
     )
     bot.send_message(message.chat.id, welcome_text, reply_markup=main_menu())
+
+# --- Обработка POST-запроса от Make ---
+@app.route('/send', methods=['POST'])
+def send_from_make():
+    data = request.get_json()
+    text = data.get('text')
+
+    if not text:
+        return jsonify({'error': 'Missing "text" parameter'}), 400
+
+    try:
+        bot.send_message(CHAT_ID, text)
+        return jsonify({'status': 'Message sent'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# --- Запуск Flask + Telegram Bot ---
+def run_flask():
+    app.run(host="0.0.0.0", port=5000)
+
+def run_telebot():
+    bot.polling()
+
+if __name__ == '__main__':
+    threading.Thread(target=run_flask).start()
+    threading.Thread(target=run_telebot).start()

@@ -1,14 +1,20 @@
 import os
 import telebot
 from telebot import types
-import time
 import threading
+import time
 
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
-CHAT_ID = -1002704677155 
+CHAT_ID = -1002704677155  # ID чата для рассылок и сообщений из Make
 
+auto_texts = [
+    "Тема 1: Как дышать правильно для медитации.",
+    "Тема 2: Польза регулярных сессий психотерапии.",
+    "Тема 3: Практики осознанности в повседневной жизни.",
+    "Тема 4: Гвоздестояние — что это и кому полезно.",
+]
 
 def main_menu():
     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -58,11 +64,11 @@ def send_welcome(message):
         "Привет! Добро пожаловать в меню бота.\n\n"
         "Выбери интересующую тебя вкладку."
     )
-    # Отправляем сообщение в чат (а не пользователю, который написал)
-    bot.send_message(CHAT_ID, welcome_text, reply_markup=main_menu())
+    # Отвечаем лично пользователю, который нажал /start
+    bot.send_message(message.chat.id, welcome_text, reply_markup=main_menu())
 
-# Функция для автопубликаций в чат
-def auto_posting(chat_id, delay=86400):
+# Функция для автопостинга в чат (например, раз в час)
+def auto_posting(chat_id, delay=3600):
     while True:
         for text in auto_texts:
             try:
@@ -70,15 +76,21 @@ def auto_posting(chat_id, delay=86400):
                 print(f"Опубликовано сообщение в {chat_id}")
             except Exception as e:
                 print(f"Ошибка при публикации в {chat_id}: {e}")
-            time.sleep(delay)  # пауза между публикациями (по умолчанию 24 часа)
+            time.sleep(delay)
 
-# Запуск автопубликаций в отдельном потоке
 def start_auto_posting():
-    thread = threading.Thread(target=auto_posting, args=(CHAT_ID, 3600))  # раз в час
+    thread = threading.Thread(target=auto_posting, args=(CHAT_ID,))
     thread.daemon = True
     thread.start()
+
+# Функция для Make: отправка сообщения в чат через бота
+def send_message_to_chat_from_make(text):
+    try:
+        bot.send_message(CHAT_ID, text)
+        print("Сообщение из Make отправлено в чат")
+    except Exception as e:
+        print(f"Ошибка при отправке из Make: {e}")
 
 if __name__ == '__main__':
     start_auto_posting()
     bot.polling()
-

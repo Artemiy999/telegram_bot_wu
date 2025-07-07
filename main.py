@@ -1,10 +1,12 @@
+import os
 import telebot
 from telebot import types
 import time
 import threading
 
-TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
+TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
+
 
 # Темы для автоматических публикаций — можно расширять или брать из файла/API
 auto_texts = [

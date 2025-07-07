@@ -3,7 +3,7 @@ import telebot
 from telebot import types
 import threading
 
-TOKEN = 'YOUR_BOT_TOKEN'
+TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
 CHAT_ID = -1001234567890  # Замените на ID канала или чата
 bot = telebot.TeleBot(TOKEN)
 

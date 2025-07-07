@@ -1,56 +1,32 @@
-import os
 from flask import Flask, request, jsonify
 import telebot
+from telebot import types
+import threading
 
-TOKEN = os.getenv("TOKEN")
-CHAT_ID = -1002704677155
-
+TOKEN = '8077877232:AAGCKJjE_yNyE-nW2-RxX4PLJ20l6zrsZWA'
+CHAT_ID = -1002704677155  # Групповой чат или канал
 bot = telebot.TeleBot(TOKEN)
+
 app = Flask(__name__)
 
+# --- Главное меню ---
 def main_menu():
-    from telebot import types
     markup = types.InlineKeyboardMarkup(row_width=1)
 
-    btn_events = types.InlineKeyboardButton(
-        'Хочу знать больше про события 📅', 
-        url='https://t.me/wu_space/5'
-    )
-    btn_events_info = types.InlineKeyboardButton(
-        'Подробнее про события и запись в чат @artemiy_starodub',
-        url='https://t.me/artemiy_starodub'
-    )
-    btn_community = types.InlineKeyboardButton(
-        'Комьюнити и общение 👥',
-        url='https://t.me/wu_space/3'
-    )
-    btn_meditations = types.InlineKeyboardButton(
-        'Медитации, подкасты и музыка 🎧',
-        url='https://t.me/wu_space/1'
-    )
-    btn_shop = types.InlineKeyboardButton(
-        'Магазин 🛒',
-        url='https://www.terrastra.net'
-    )
-    btn_about = types.InlineKeyboardButton(
-        'Узнать больше о нас (музыка и обучение) 🎶',
-        url='https://www.instagram.com/artemiy_teaching_valencia_/'
-    )
-    btn_blog = types.InlineKeyboardButton(
-        'Мой блог и темы терапии 🔥',
-        url='https://www.instagram.com/artemiy_starod_psy'
-    )
-    btn_session = types.InlineKeyboardButton(
-        'Записаться на сессию и пообщаться лично 🗣️',
-        url='https://t.me/artemiy_starodub'
+    markup.add(
+        types.InlineKeyboardButton('Хочу знать больше про события 📅', url='https://t.me/wu_space/5'),
+        types.InlineKeyboardButton('Подробнее про события и запись в чат @artemiy_starodub', url='https://t.me/artemiy_starodub'),
+        types.InlineKeyboardButton('Комьюнити и общение 👥', url='https://t.me/wu_space/3'),
+        types.InlineKeyboardButton('Медитации, подкасты и музыка 🎧', url='https://t.me/wu_space/1'),
+        types.InlineKeyboardButton('Магазин 🛒', url='https://www.terrastra.net'),
+        types.InlineKeyboardButton('Узнать больше о нас (музыка и обучение) 🎶', url='https://www.instagram.com/artemiy_teaching_valencia_/'),
+        types.InlineKeyboardButton('Мой блог и темы терапии 🔥', url='https://www.instagram.com/artemiy_starod_psy'),
+        types.InlineKeyboardButton('Записаться на сессию и пообщаться лично 🗣️', url='https://t.me/artemiy_starodub')
     )
 
-    markup.add(
-        btn_events, btn_events_info, btn_community, btn_meditations,
-        btn_shop, btn_about, btn_blog, btn_session
-    )
     return markup
 
+# --- Обработка /start от пользователя ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     welcome_text = (
@@ -59,26 +35,28 @@ def send_welcome(message):
     )
     bot.send_message(message.chat.id, welcome_text, reply_markup=main_menu())
 
+# --- Обработка POST-запроса от Make ---
 @app.route('/send', methods=['POST'])
-def send_message():
-    data = request.json
-    if not data or 'text' not in data or not data['text'].strip():
-        return jsonify({"error": "Missing required parameter 'text'"}), 400
+def send_from_make():
+    data = request.get_json()
+    text = data.get('text')
 
-    text = data['text']
+    if not text:
+        return jsonify({'error': 'Missing "text" parameter'}), 400
+
     try:
         bot.send_message(CHAT_ID, text)
-        return jsonify({"status": "Message sent"})
+        return jsonify({'status': 'Message sent'})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
+
+# --- Запуск Flask + Telegram Bot ---
+def run_flask():
+    app.run(host="0.0.0.0", port=5000)
+
+def run_telebot():
+    bot.polling()
 
 if __name__ == '__main__':
-    # Запускаем бота в отдельном потоке, а Flask API — в основном
-    import threading
-
-    def run_bot():
-        bot.infinity_polling()
-
-    threading.Thread(target=run_bot).start()
-    app.run(host='0.0.0.0', port=5000)
-
+    threading.Thread(target=run_flask).start()
+    threading.Thread(target=run_telebot).start()
